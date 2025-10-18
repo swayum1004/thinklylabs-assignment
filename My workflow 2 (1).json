@@ -290,7 +290,7 @@
       ],
       "id": "afab4eff-7971-4dc1-9761-ce3e2c1b1073",
       "name": "Process & Draft",
-      "executeOnce": true,
+      "executeOnce": false,
       "credentials": {
         "googlePalmApi": {
           "id": "3q5o1OmuoqqwJvSQ",
@@ -316,7 +316,7 @@
     },
     {
       "parameters": {
-        "amount": "={{ $itemIndex * 31 }}"
+        "amount": "={{ ($itemIndex+1) * 31 }}"
       },
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
@@ -435,7 +435,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "ab856840-7d04-4342-bbe6-b739b69444f7",
+  "versionId": "57440c42-26f9-436c-bd75-1f7cf7137a72",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "9ede13acab2d5c87dad467ee21e7fe12212070c3e7611edba7768e475cad73cb"
