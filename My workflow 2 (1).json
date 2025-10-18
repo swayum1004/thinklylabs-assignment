@@ -1,0 +1,445 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9af10326-be72-496e-afcc-63c90984f00e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"q\": \"list of companies with data breaches 2023\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "daa54e12-5017-45e3-864a-7a7e61a81904",
+      "name": "Find Breach Articles",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "h3BHhNfJK5E7SiWF",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-pro-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-pro-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=From the provided web search results, identify up to 5 companies that had a data breach. Your response must be a valid JSON object with a single key \"companies\", which is an array of the company names.\n\nSearch results:\n{{ $('Find Breach Articles').item.json.organic }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "systemMessage": ""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        368,
+        0
+      ],
+      "id": "b5c79492-0d96-42d1-8b9e-993d47f9fe4d",
+      "name": "Extract Companies",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "3q5o1OmuoqqwJvSQ",
+          "name": "GooglePaLMApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": \"{{ $json.value }} official website\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "a96be7d3-3ef9-4113-8029-166a661cb793",
+      "name": "Find Company Domain",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "h3BHhNfJK5E7SiWF",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": \"site:linkedin.com/in/ \\\"CISO\\\" OR \\\"Chief Information Security Officer\\\" at \\\"{{ $('Split Out').item.json.value }}\\\"\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "5312155a-10b9-4a4f-9a8d-4320f70794ed",
+      "name": "Find Security Contact",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "h3BHhNfJK5E7SiWF",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_PEI1elTrTkdprC-MB_H-WdXELeACccWSG1QXtfWt5g",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_PEI1elTrTkdprC-MB_H-WdXELeACccWSG1QXtfWt5g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_PEI1elTrTkdprC-MB_H-WdXELeACccWSG1QXtfWt5g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "CompanyName": "={{ $('Split Out').item.json.value }}",
+            "Domain": "={{ $('Find Company Domain').item.json.organic[0].link.split('/')[2] }}",
+            "ContactName": "={{ JSON.parse($('Process & Draft').item.json.content.parts[0].text).name }}",
+            "ContactTitle": "={{ JSON.parse($('Process & Draft').item.json.content.parts[0].text).title }}",
+            "InferredEmail": "={{ JSON.parse($('Process & Draft').item.json.content.parts[0].text).email }}",
+            "EmailDraft": "={{ JSON.parse($('Process & Draft').item.json.content.parts[0].text).email_draft }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "CompanyName",
+              "displayName": "CompanyName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Domain",
+              "displayName": "Domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ContactName",
+              "displayName": "ContactName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ContactTitle",
+              "displayName": "ContactTitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "InferredEmail",
+              "displayName": "InferredEmail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "EmailDraft",
+              "displayName": "EmailDraft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        336
+      ],
+      "id": "c97d6b4b-2227-4e03-8eab-b556344dcc54",
+      "name": "Append to Sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "YINhDlXF1oD71DGr",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b2d05e75-0a9a-40fe-bc31-79a2dcd1fe6d",
+              "name": "companies_array",
+              "value": "={{ JSON.parse($('Extract Companies').item.json.content.parts[0].text).companies }}",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        0
+      ],
+      "id": "4a856f3c-2ee5-415d-80b0-6987177ecb1e",
+      "name": "Prepare Array"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-pro-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-pro-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert data processing assistant. I will give you a search snippet, a company name, and a domain.\n\nYour job is to perform three tasks and return a single JSON object.\n\nTASKS:\n1.  **Extract Details**: Clean up the search snippet to find the person's full name and job title. If you can't find one, return an empty string.\n2.  **Infer Email**: Based on the name and domain, infer the most likely corporate email address.\n3.  **Draft Email**: Draft a brief, non-salesy email (under 150 words) to this person. Mention their company and the 2023 data breach.\n\nINPUT DATA:\n-   Search Snippet: {{ $('Find Security Contact').item.json.organic[0].snippet }}\n-   Company Name: {{ $('Split Out').item.json.value }}\n-   Domain: {{ $('Find Company Domain').item.json.organic[0].link.split('/')[2] }}\n\nREQUIRED JSON OUTPUT FORMAT:\n{\n  \"name\": \"Full Name\",\n  \"title\": \"Job Title\",\n  \"email\": \"inferred.email@domain.com\",\n  \"email_draft\": \"Hi [First Name], ...\"\n}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        256,
+        336
+      ],
+      "id": "afab4eff-7971-4dc1-9761-ce3e2c1b1073",
+      "name": "Process & Draft",
+      "executeOnce": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "3q5o1OmuoqqwJvSQ",
+          "name": "GooglePaLMApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "companies_array",
+        "options": {
+          "destinationFieldName": "value"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        880,
+        0
+      ],
+      "id": "2bab0793-a2b6-4c75-83f9-9d53627351c7",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $itemIndex * 31 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1088,
+        0
+      ],
+      "id": "3fa87ef6-67f0-4776-a468-90f2c7dbab25",
+      "name": "Wait",
+      "webhookId": "24b820f8-c124-42ca-b193-d739d09b4434"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Find Breach Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Breach Articles": {
+      "main": [
+        [
+          {
+            "node": "Extract Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Companies": {
+      "main": [
+        [
+          {
+            "node": "Prepare Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Company Domain": {
+      "main": [
+        [
+          {
+            "node": "Find Security Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Security Contact": {
+      "main": [
+        [
+          {
+            "node": "Process & Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Array": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process & Draft": {
+      "main": [
+        [
+          {
+            "node": "Append to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Find Company Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ab856840-7d04-4342-bbe6-b739b69444f7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9ede13acab2d5c87dad467ee21e7fe12212070c3e7611edba7768e475cad73cb"
+  },
+  "id": "IkT2GjRKQIrXjEKk",
+  "tags": []
+}
